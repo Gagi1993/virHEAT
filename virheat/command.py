@@ -131,6 +131,13 @@ def get_args(sysargs):
         help="specify scores to be added to the plot by providing a CSV file containing scores, along with its column for amino-acid positions, its column for scores, and descriptive score names (e.g., expression, binding, antibody escape, etc.). This option can be used multiple times to include multiple sets of scores."
     )
     parser.add_argument(
+    	"--freq-scale-max",
+    	type=float,
+    	metavar="0.2",
+    	default=1.0,
+    	help="Maximum frequency for color scale (default: 1.0 = 100%%). Set to e.g. 0.2 to zoom into low-frequency variants."
+    )
+    parser.add_argument(
         "-v",
         "--version",
         action='version',
@@ -235,13 +242,13 @@ def main(sysargs=sys.argv[1:]):
     # plot all common elements
     cmap = cm.gist_heat_r
     cmap.set_bad('silver', 1.)
-    cmap_cells = cm.ScalarMappable(norm=colors.Normalize(0, 1), cmap=cmap)
+    cmap_cells = cm.ScalarMappable(norm=colors.Normalize(0, args.freq_scale_max), cmap=cmap)
     plotting.create_heatmap(ax, frequency_array, cmap_cells)
     mutation_set = plotting.create_genome_vis(ax, genome_y_location, n_mutations, unique_mutations, start, stop)
     plotting.create_axis(ax, n_mutations, min_y_location, n_samples, file_names, start, stop, genome_y_location,
                          unique_mutations, args.reference)
     plotting.create_mutation_legend(mutation_set, min_y_location, n_samples, n_scores)
-    plotting.create_colorbar(args.threshold, cmap_cells, min_y_location, n_samples, ax)
+    plotting.create_colorbar(args.threshold, cmap_cells, min_y_location, n_samples, ax, args.freq_scale_max)
     # plot gene track
     if args.gff3_path is not None:
         if genes_with_mutations:
