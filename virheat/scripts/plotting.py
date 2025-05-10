@@ -121,32 +121,45 @@ def create_scores_vis(ax, genome_y_location, n_mutations, n_tracks, unique_mutat
         print("\033[31m\033[1mERROR:\033[0m Seems like there are no scores in the score set '{}' corresponding to the plotted mutation positions.".format(score_name))
         return False
 
+def create_colorbar(threshold, cmap, min_y_location, n_samples, ax, freq_scale_max):
+    """
+    creates a custom colorbar and annotates the threshold using a dynamic frequency scale max
+    """
+    import numpy as np
 
-def create_colorbar(threshold, cmap, min_y_location, n_samples, ax):
-    """
-    creates a custom colorbar and annotates the threshold
-    """
-    if n_samples >= 8:
-        ticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
-        labels = [0, 0.2, 0.4, 0.6, 0.8, 1]
-        if threshold + 0.1 in ticks or threshold - 0.1 in ticks:
-            rounded_threshold = threshold
-        else:
-            rounded_threshold = round(threshold * 5) / 5
+    # Define tick step dynamically based on freq_scale_max
+    if freq_scale_max <= 0.2:
+        step = 0.05
+    elif freq_scale_max <= 0.5:
+        step = 0.1
     else:
-        ticks = [0, 0.5, 1]
-        labels = [0, 0.5, 1]
-        if threshold + 0.25 in ticks or threshold - 0.25 in ticks:
-            rounded_threshold = threshold
-        else:
-            rounded_threshold = round(threshold * 2) / 2
+        step = 0.2
 
-    if rounded_threshold in ticks:
-        ticks.remove(rounded_threshold)
-        labels.remove(rounded_threshold)
-    ticks.append(threshold)
-    labels.append(f"threshold\n={threshold}")
-    cbar = plt.colorbar(cmap, label="variant frequency", pad=0, shrink=n_samples/(min_y_location+n_samples), anchor=(0.1,1), aspect=15, ax=ax)
+    # Generate tick positions
+    ticks = list(np.arange(0, freq_scale_max + step, step))
+    labels = [round(t, 3) for t in ticks]
+
+    # Add threshold if not already included
+    if not any(np.isclose(threshold, t) for t in ticks):
+        ticks.append(threshold)
+        labels.append(f"threshold\n={round(threshold, 3)}")
+    else:
+        # Update the label for the existing threshold tick
+        for i, t in enumerate(ticks):
+            if np.isclose(threshold, t):
+                labels[i] = f"threshold\n={round(threshold, 3)}"
+                break
+
+    # Create colorbar with dynamic scale
+    cbar = plt.colorbar(
+        cmap,
+        label=f"Variant Frequency (0–{round(freq_scale_max, 2)})",
+        pad=0,
+        shrink=n_samples / (min_y_location + n_samples),
+        anchor=(0.1, 1),
+        aspect=15,
+        ax=ax
+    )
     cbar.set_ticks(ticks)
     cbar.set_ticklabels(labels)
 
